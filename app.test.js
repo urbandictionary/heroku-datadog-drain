@@ -21,6 +21,8 @@ describe('Heroku Datadog Drain', function () {
   afterEach(function () {
     StatsD.prototype.histogram.restore();
     StatsD.prototype.increment.restore();
+
+    delete process.env.ROUTER_TAG_NAMES;
   });
 
   it('returns HTTP 401 if credentials are not found in environment', function () {
@@ -51,6 +53,24 @@ describe('Heroku Datadog Drain', function () {
       ]);
       expect(StatsD.prototype.increment.args).to.deep.equal([
         ['heroku.router.error', 1, ['dyno:web.1', 'method:GET', 'status:503', 'path:/', 'host:myapp.com', 'code:H12', 'desc:Request timeout', 'at:error', 'default:tag', 'app:test-app']],
+      ]);
+    });
+  });
+
+  it('sends router response metrics and error count to statsd, and respects ROUTER_TAG_NAMES', function () {
+    process.env.ROUTER_TAG_NAMES = 'dyno,method,status';
+
+    return request(app)
+    .post('/')
+    .auth('test-app', 'test-pass')
+    .set('Content-type', 'application/logplex-1')
+    .send(`255 <158>1 2015-04-02T11:52:34.520012+00:00 host heroku router - at=info method=POST path="/users" host=myapp.com request_id=c1806361-2081-42e7-a8aa-92b6808eac8e fwd="24.76.242.18" dyno=web.1 connect=1ms service=37ms status=201 bytes=828`)
+    .expect(200)
+    .expect('OK')
+    .then(function () {
+      expect(StatsD.prototype.histogram.args).to.deep.equal([
+        ['heroku.router.request.connect', 1, [ 'dyno:web.1', 'method:POST', 'status:201', 'path:/users', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
+        ['heroku.router.request.service', 37, ['dyno:web.1', 'method:POST', 'status:201', 'path:/users', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']]
       ]);
     });
   });
