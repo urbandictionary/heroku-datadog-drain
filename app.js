@@ -72,7 +72,8 @@ function processLine (line, prefix, defaultTags) {
     if (process.env.DEBUG) {
       console.log('Processing router metrics');
     }
-    let tags = tagsToArr(_.pick(line, ['dyno', 'method', 'status', 'path', 'host', 'code', 'desc', 'at']));
+    let routerTagNames = (process.env.ROUTER_TAG_NAMES || 'dyno,method,status,path,host,code,desc,at').split(',');
+    let tags = tagsToArr(_.pick(line, routerTagNames));
     tags = _.union(tags, defaultTags);
     statsd.histogram(prefix + 'heroku.router.request.connect', extractNumber(line.connect), tags);
     statsd.histogram(prefix + 'heroku.router.request.service', extractNumber(line.service), tags);

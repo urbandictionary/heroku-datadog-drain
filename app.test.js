@@ -69,8 +69,8 @@ describe('Heroku Datadog Drain', function () {
     .expect('OK')
     .then(function () {
       expect(StatsD.prototype.histogram.args).to.deep.equal([
-        ['heroku.router.request.connect', 1, [ 'dyno:web.1', 'method:POST', 'status:201', 'path:/users', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
-        ['heroku.router.request.service', 37, ['dyno:web.1', 'method:POST', 'status:201', 'path:/users', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']]
+        ['heroku.router.request.connect', 1, ['dyno:web.1', 'method:POST', 'status:201', 'default:tag', 'app:test-app']],
+        ['heroku.router.request.service', 37, ['dyno:web.1', 'method:POST', 'status:201', 'default:tag', 'app:test-app']]
       ]);
     });
   });
