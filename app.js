@@ -75,8 +75,8 @@ function processLine (line, prefix, defaultTags) {
     let routerTagNames = (process.env.ROUTER_TAG_NAMES || 'dyno,method,status,path,host,code,desc,at').split(',');
     let tags = tagsToArr(_.pick(line, routerTagNames));
     tags = _.union(tags, defaultTags);
-    statsd.histogram(prefix + 'heroku.router.request.connect', extractNumber(line.connect), tags);
-    statsd.histogram(prefix + 'heroku.router.request.service', extractNumber(line.service), tags);
+    statsd.histogram(prefix + 'heroku.router.connect', extractNumber(line.connect), tags);
+    statsd.histogram(prefix + 'heroku.router.service', extractNumber(line.service), tags);
     if (line.at === 'error') {
       statsd.increment(prefix + 'heroku.router.error', 1, tags);
     }
