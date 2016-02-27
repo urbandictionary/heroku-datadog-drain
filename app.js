@@ -110,10 +110,22 @@ function processLine (line, prefix, defaultTags) {
     });
   }
 
+  else if (_.some(_.keys(line), (key) => key.match(/^measure\./))) {
+    if (process.env.DEBUG) {
+      console.log('Processing memory metrics');
+    }
+    let tags = tagsToArr({ dyno: line.source });
+    tags = _.union(tags, defaultTags);
+    let metrics = _.pick(line, (_, key) => key.match(/^measure\./));
+    _.forEach(metrics, function (value, key) {
+      statsd.histogram(prefix + key, extractNumber(value), tags);
+    });
+  }
+
   // Default
   else {
     if (process.env.DEBUG) {
-      console.log('No match for line');
+      console.log('No match for line: ' + JSON.stringify(line));
     }
   }
 }

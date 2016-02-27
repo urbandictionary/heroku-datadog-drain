@@ -57,6 +57,33 @@ describe('Heroku Datadog Drain', function () {
     });
   });
 
+  it('sends memory metrics to statsd', function () {
+    return request(app)
+    .post('/')
+    .auth('test-app', 'test-pass')
+    .set('Content-type', 'application/logplex-1')
+    .send(`255 <158>1 2016-02-27T00:53:43.455990+00:00 host heroku router - dyno=web.1 measure.mem.jvm.heap.used=118M measure.mem.jvm.heap.committed=222M measure.mem.jvm.heap.max=466M\n
+          255 <158>1 2016-02-27T00:53:43.456078+00:00 host heroku router - dyno=web.1 measure.mem.jvm.nonheap.used=59M measure.mem.jvm.nonheap.committed=61M measure.mem.jvm.nonheap.max=0M\n
+          255 <158>1 2016-02-27T00:53:43.456178+00:00 host heroku router - dyno=web.1 measure.threads.jvm.total=32 measure.threads.jvm.daemon=14 measure.threads.jvm.nondaemon=11 measure.threads.jvm.internal=7`)
+    .expect(200)
+    .expect('OK')
+    .then(function () {
+      expect(StatsD.prototype.histogram.args).to.deep.equal([
+        ["measure.mem.jvm.heap.used", 118, ["dyno:undefined", "default:tag", "app:test-app"]],
+        ["measure.mem.jvm.heap.committed", 222, ["dyno:undefined", "default:tag", "app:test-app"]],
+        ["measure.mem.jvm.heap.max", 466, ["dyno:undefined", "default:tag", "app:test-app"]],
+        ["measure.mem.jvm.nonheap.used", 59, ["dyno:undefined", "default:tag", "app:test-app"]],
+        ["measure.mem.jvm.nonheap.committed", 61, ["dyno:undefined", "default:tag", "app:test-app"]],
+        ["measure.mem.jvm.nonheap.max", 0, ["dyno:undefined", "default:tag", "app:test-app"]],
+        ["measure.threads.jvm.total", 32, ["dyno:undefined", "default:tag", "app:test-app"]],
+        ["measure.threads.jvm.daemon", 14, ["dyno:undefined", "default:tag", "app:test-app"]],
+        ["measure.threads.jvm.nondaemon", 11, ["dyno:undefined", "default:tag", "app:test-app"]],
+        ["measure.threads.jvm.internal", 7, ["dyno:undefined", "default:tag", "app:test-app"]]]
+      );
+      expect(StatsD.prototype.increment.args).to.deep.equal([]);
+    });
+  });
+
   it('sends router response metrics and error count to statsd, and respects ROUTER_TAG_NAMES', function () {
     process.env.ROUTER_TAG_NAMES = 'dyno,method,status';
 
@@ -98,7 +125,7 @@ describe('Heroku Datadog Drain', function () {
       ]);
     });
   });
-  
+
   it('sends PostgreSQL metrics to statsd', function () {
     return request(app)
     .post('/')
